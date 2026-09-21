@@ -1,25 +1,24 @@
 # Mindvestments
 
-A static, multilingual content site built with Astro. No WordPress, no database, no CMS —
+A static, English-only content site built with Astro. No WordPress, no database, no CMS —
 everything lives in this repo as files, so Git history doubles as the change log the evidence
 policy requires.
 
-## Languages
+## Language
 
-Four locales are wired into the routing: **English** and **Swedish** are fully translated and
-have content. **Hindi** and **Arabic** have working routes, a language switcher entry, and
-translated site chrome (navigation, buttons, footer) — but no articles yet. Visiting an
-untranslated page in those languages shows an honest "not translated yet, read it in English"
-notice instead of silently falling back.
+The site is English-only. Earlier work wired up multilingual routing (Swedish, Hindi, Arabic),
+but that has been rolled back for launch:
 
-Arabic renders right-to-left automatically (`dir="rtl"` is set from `src/i18n/config.ts`), and
-the stylesheet uses logical CSS properties (`border-inline-start`, `padding-inline`, `inset-inline-start`)
-throughout specifically so RTL did not need retrofitting later. Hindi and Arabic load their own
-web fonts (Noto Serif/Sans Devanagari, Noto Naskh Arabic) since the Latin serif/sans pairing used
-elsewhere doesn't cover those scripts.
-
-Every URL is prefixed: `/en/`, `/sv/`, `/hi/`, `/ar/`. The root `/` redirects client-side based on
-browser language, defaulting to English, with a plain link list for anyone without JS.
+- The article content collection (`src/content.config.ts`) loads only from
+  `src/content/articles/en/` — content under `sv/` (and any other locale folder still present on
+  disk) is archived and excluded from the build.
+- Live pages are English routes with no locale prefix (`/`, `/sleep`, `/sleep/some-slug`, etc.).
+- `src/i18n/ui.ts` is a flat, single-language translation dictionary (`t(key, vars?)`), and
+  `src/i18n/content.ts` provides `parseId()` / `urlFor()` for turning an article's collection id
+  into its URL.
+- Some pre-English-only files (a `src/pages/[locale]/` directory and `src/i18n/config.ts`) still
+  exist on disk as legacy leftovers from the old routing. They are not part of the current build
+  or navigation and are pending cleanup — do not extend them.
 
 ## Running it
 
@@ -30,73 +29,59 @@ npm install
 npm run dev      # http://localhost:4321
 npm run build    # static output in dist/
 npm run preview  # serve the built site locally
+npm run check    # astro check (TypeScript/template diagnostics)
 ```
 
-## Putting it on GitHub
+## Deployment
 
-```bash
-git init
-git add .
-git commit -m "Initial site"
-git branch -M main
-git remote add origin git@github.com:YOURNAME/mindvestments.git
-git push -u origin main
-```
+Production is deployed to **Cloudflare Pages**, building from the **`main`** branch.
 
-Then pick a host:
-
-- **Vercel or Cloudflare Pages** (recommended): connect the repo, accept the detected Astro
-  settings, point `mindvestments.com` at it.
-- **GitHub Pages**: already wired up in `.github/workflows/deploy.yml`. Enable Pages in the repo
-  settings with source set to GitHub Actions, and add a `public/CNAME` file containing
-  `mindvestments.com` if you use the custom domain.
+A GitHub Actions workflow to GitHub Pages also exists at `.github/workflows/deploy.yml`. It is not
+the active production deployment — Cloudflare Pages is.
 
 ## Where everything is
 
 ```
 src/
   i18n/
-    config.ts               locales, default locale, RTL/font metadata, path() and
-                             swapLocale() helpers. Add a fifth locale here.
-    ui.ts                    the translation dictionary. t(locale, key) falls back to
-                             English for any key a locale hasn't translated — nothing
-                             ever renders blank.
-    content.ts               parseId() / urlFor() — reads locale and pillar out of an
-                             article's file path instead of duplicating them in frontmatter.
+    ui.ts                    the (English-only) translation dictionary. t(key, vars?) looks up
+                             a flat key, with simple {var} interpolation.
+    content.ts                parseId() / urlFor() — reads pillar/slug out of an article's
+                             collection id and builds its URL.
 
-  data/site.ts               language-neutral data only: pillar ids, marker colours,
-                             which pillars have content yet (livePillars).
+  data/site.ts                sitewide brand constants (name, url, author, email, youtube) and
+                             language-neutral pillar/nav data.
 
-  content.config.ts          the schema every article must satisfy.
+  content.config.ts           the schema every article must satisfy; loader points at
+                             src/content/articles/en only.
 
-  content/articles/<locale>/<pillar>/<slug>.mdx
-                             one file per article per language. The locale comes from
-                             the folder, so a Swedish article physically cannot end up
-                             tagged as English.
+  content/articles/en/<pillar>/<slug>.mdx
+                             one file per article. Pillar comes from the folder, so a file
+                             physically cannot end up tagged with the wrong pillar.
 
-  layouts/Base.astro         head, hreflang tags, locale-aware fonts, dir=rtl/ltr.
-  components/                MindvestmentCard, ArticleCard, EvidenceBadge, Header
-                             (contains the language switcher), Footer.
+  layouts/Base.astro          document head: title/description, canonical URL, Open Graph and
+                             Twitter meta, sitewide Organization/WebSite JSON-LD, fonts.
+  components/                 MindvestmentCard, ArticleCard, ArticleArt, EvidenceBadge,
+                             VideoEmbed, Header, Footer.
 
   pages/
-    index.astro               root redirect by browser language
-    404.astro                 locale-neutral, used for any genuinely unmatched path
-    [locale]/index.astro      homepage
-    [locale]/start.astro      the six-question router (en/sv only — see below)
-    [locale]/evidence.astro
-    [locale]/about.astro
-    [locale]/contact.astro
-    [locale]/[pillar]/index.astro
-    [locale]/[pillar]/[slug].astro
+    index.astro                homepage
+    404.astro
+    start.astro                the six-question router
+    evidence.astro
+    about.astro
+    contact.astro
+    search.astro               static, compile-time search index, plain-substring match
+    lifestyle.astro            Sleep/Fuel/Life hub grouping
+    [pillar]/index.astro
+    [pillar]/[slug].astro
 
-  styles/global.css           all design tokens, logical properties for RTL,
-                              per-script font overrides.
+  styles/global.css            all design tokens and shared component styles.
 ```
 
 ## Adding an article
 
-Create `src/content/articles/en/sleep/your-slug.mdx` (swap `en` for the target locale). The URL
-becomes `/en/sleep/your-slug`.
+Create `src/content/articles/en/sleep/your-slug.mdx`. The URL becomes `/sleep/your-slug`.
 
 ```yaml
 ---
@@ -123,22 +108,18 @@ video:                           # optional
 
 careNote: Shown as a warning block at the top. Use it for real red flags.
 related:
-  - sleep/caffeine-and-sleep     # pillar/slug, resolved within the same locale
+  - sleep/caffeine-and-sleep     # pillar/slug
 sources:
   - text: Title of the paper
     publisher: Journal name
     year: 2021
     url: https://...
 
-featured: false                  # one article per locale can be the homepage hero
+featured: false                  # one article can be the homepage hero
 order: 1                         # lower sorts first
 draft: false
 ---
 ```
-
-**To translate an existing article**, create a file with the *same slug* under the new locale's
-folder — `src/content/articles/sv/sleep/your-slug.mdx` — so `related` links resolve correctly in
-both languages independently.
 
 Then the body, in this order every time:
 
@@ -148,17 +129,6 @@ Then the body, in this order every time:
 4. `## Common mistakes`
 5. `## What should change` — and roughly when
 6. `## Your next step` — exactly one thing, never a list of ten
-
-## Adding a language
-
-1. Add it to `locales` and `localeMeta` in `src/i18n/config.ts` (set `dir: 'rtl'` if needed,
-   `contentReady: false` until articles exist).
-2. Add a translated entry to `ui` in `src/i18n/ui.ts` — even just the chrome strings (nav, footer,
-   `notFound.*`) is enough for the site to work; anything untranslated falls back to English.
-3. If the script needs a specific font, add it to the `needsX` checks and font `<link>` in
-   `Base.astro`, and a `:root[lang='xx']` block in `global.css`.
-4. Nothing in `astro.config.mjs` or the page templates needs to change — `getStaticPaths` reads
-   `locales` directly, so every route generates automatically.
 
 ## Images
 
@@ -175,9 +145,8 @@ image:
 ```
 
 Nothing else needs to change — the placeholder is replaced automatically everywhere that article
-appears (cards, hub grids, the article page itself). Per the design direction: no stock photography
-of people mid-stretch or generic wellness imagery — stills from your own video shoots are what this
-site is built to use once they exist.
+appears (cards, hub grids, the article page itself, and the page's Open Graph/Twitter/JSON-LD
+image).
 
 ## Rules the site is built around
 
@@ -185,15 +154,13 @@ site is built to use once they exist.
 - Every article carries a check date. Anything older than two years gets reviewed again.
 - Every follow-along video has a page here; every practical page has a video when one is possible.
 - No supplement affiliate links. Ever.
-- A locale gap is shown honestly ("not translated yet") rather than silently served in the wrong
-  language or left blank.
 
 ## Before launch
 
-- [ ] Replace `site.author`, `site.email` and `site.youtube` in `src/data/site.ts`
-- [ ] Write `/about` properly per locale and put a real photograph on it
-- [ ] Point the newsletter form on the homepage at your email provider
-- [ ] Replace `REPLACE_WITH_VIDEO_ID` in `yoga-before-bed.mdx` and `stiff-hips-stretch.mdx` (both locales)
-- [ ] Add an OG image and reference it in `Base.astro`
-- [ ] Write the Hindi and Arabic start-page quiz in `[locale]/start.astro` once ready
-- [ ] Set up Plausible or Fathom, and nothing heavier
+- [ ] Point the newsletter section on the homepage at an actual email provider (currently
+      "Sign-up isn't open yet")
+- [ ] Write `/about` properly and add a real photograph (currently a placeholder)
+- [ ] Connect the `mindvestments.com` domain
+- [ ] Resolve the Cloudflare Pages build configuration so it builds and serves this Astro project
+- [ ] Decide whether to keep or remove the GitHub Pages workflow and the legacy `[locale]`/
+      `src/i18n/config.ts`/non-English content folders
