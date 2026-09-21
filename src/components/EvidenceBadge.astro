@@ -1,0 +1,49 @@
+---
+import { t } from '../i18n/ui';
+import type { EvidenceGrade } from '../data/site';
+
+interface Props {
+  grade: EvidenceGrade;
+  showLabel?: boolean;
+}
+
+const { grade, showLabel = true } = Astro.props;
+const label = t(`evidence.${grade}.label`);
+const long = t(`evidence.${grade}.long`);
+---
+
+<a class="evidence" href="/evidence" title={long}>
+  <span class:list={['mark', `g-${grade}`]}>{grade}</span>
+  {showLabel && <span class="txt">{label}</span>}
+</a>
+
+<style>
+  .evidence {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    text-decoration: none;
+    color: var(--text);
+    font-size: var(--fs-xs);
+  }
+
+  .mark {
+    display: grid;
+    place-items: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 2px;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    line-height: 1;
+    color: var(--bg);
+    background: var(--text);
+  }
+
+  .g-A { background: var(--forest); color: var(--ivory); }
+  .g-B { background: var(--gold-deep); color: var(--ivory); }
+  .g-C { background: var(--stone); color: var(--charcoal); }
+  .g-D { background: transparent; color: var(--text-muted); border: 1px dashed var(--border-strong); }
+
+  .evidence:hover .txt { color: var(--accent); }
+</style>

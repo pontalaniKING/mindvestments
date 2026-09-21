@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+import EvidenceBadge from '../components/EvidenceBadge.astro';
+import { evidenceGradeIds } from '../data/site';
+import { t } from '../i18n/ui';
+
+const rules = ['rule1', 'rule2', 'rule3', 'rule4', 'rule5', 'rule6'];
+---
+
+<Base title={t('evidence.title')} description={t('evidence.description')}>
+  <section class="wrap intro">
+    <h1>{t('evidence.h1')}</h1>
+    <p class="lede measure">{t('evidence.lede')}</p>
+  </section>
+
+  <hr class="wrap rule" />
+
+  <section class="wrap section">
+    <div class="grades">
+      {
+        evidenceGradeIds.map((grade) => (
+          <div class="grade">
+            <EvidenceBadge grade={grade} showLabel={false} />
+            <div>
+              <h2>{t(`evidence.${grade}.label`)}</h2>
+              <p class="short">{t(`evidence.${grade}.short`)}</p>
+              <p class="long">{t(`evidence.${grade}.long`)}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="measure prose">
+      <h2>{t('evidence.rulesHeading')}</h2>
+      <ul>
+        {rules.map((r) => <li>{t(`evidence.${r}`)}</li>)}
+      </ul>
+
+      <h2>{t('evidence.changeMindHeading')}</h2>
+      <p>{t('evidence.changeMindBody')}</p>
+
+      <h2>{t('evidence.notMedicalHeading')}</h2>
+      <p>{t('evidence.notMedicalBody')}</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .intro { padding-block: var(--s6) var(--s4); }
+  .intro h1 { font-size: var(--fs-4xl); }
+  .intro .lede { color: var(--text-muted); }
+  .grades { display: grid; gap: var(--s4); max-width: 780px; }
+  .grade { display: grid; grid-template-columns: 2rem 1fr; gap: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--border); }
+  .grade h2 { font-size: var(--fs-lg); margin-bottom: 0.2rem; }
+  .short { margin-bottom: 0.3rem; }
+  .long { color: var(--text-muted); font-size: var(--fs-sm); margin: 0; }
+</style>

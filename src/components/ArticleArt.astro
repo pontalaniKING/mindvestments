@@ -1,0 +1,77 @@
+---
+/**
+ * Renders a real photo when one is set on the article, otherwise an
+ * on-brand abstract placeholder — thin arcs in the pillar's marker
+ * colour, matching the "abstract data viz as art" design direction
+ * rather than a grey "image missing" box or stock photography.
+ *
+ * Swap in a real photo later by adding `image: { src, alt }` to the
+ * article's frontmatter — nothing here needs to change.
+ */
+import type { PillarId } from '../data/site';
+
+interface Props {
+  pillar: PillarId;
+  image?: { src: string; alt: string };
+  seed?: string; // varies the pattern per article so a grid doesn't repeat identically
+  ratio?: string; // CSS aspect-ratio, default 4/3
+}
+
+const { pillar, image, seed = pillar, ratio = '4 / 3' } = Astro.props;
+
+// Cheap deterministic hash so the same article always gets the same
+// pattern, and different articles in the same pillar look distinct.
+function hash(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+const n = hash(seed);
+const cx = 20 + (n % 60);
+const cy = 20 + ((n >> 8) % 60);
+const r1 = 30 + (n % 25);
+const r2 = 55 + ((n >> 4) % 30);
+const rot = n % 360;
+---
+
+<div class="art" style={`--marker: var(--pillar-${pillar}); aspect-ratio: ${ratio};`}>
+  {
+    image ? (
+      <img src={image.src} alt={image.alt} loading="lazy" />
+    ) : (
+      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g transform={`rotate(${rot} ${cx} ${cy})`} fill="none" stroke="var(--marker)">
+          <circle cx={cx} cy={cy} r={r1} stroke-width="0.6" opacity="0.55" />
+          <circle cx={cx} cy={cy} r={r2} stroke-width="0.4" opacity="0.3" />
+          <line x1={cx - r2} y1={cy} x2={cx + r2} y2={cy} stroke-width="0.3" opacity="0.25" />
+        </g>
+      </svg>
+    )
+  }
+</div>
+
+<style>
+  .art {
+    position: relative;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .art img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .art svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+</style>

@@ -1,0 +1,47 @@
+---
+// A flat, single-language 404 — this is what the server returns for any
+// unmatched path.
+import '../styles/global.css';
+import { livePillars } from '../data/site';
+import { t } from '../i18n/ui';
+import { site } from '../data/site';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page not found — {site.name}</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap"
+    />
+  </head>
+  <body>
+    <main class="wrap notfound">
+      <p class="kicker">{t('notFound.kicker')}</p>
+      <h1>{t('notFound.h1')}</h1>
+      <p class="lede measure">{t('notFound.lede')}</p>
+      <div class="links">
+        <a class="btn btn-quiet" href="/">Home</a>
+        {livePillars.map((id) => (
+          <a class="btn btn-quiet" href={`/${id}`}>{t(`nav.pillar.${id}`)}</a>
+        ))}
+        <a class="btn btn-quiet" href="/start">{t('nav.startHere')}</a>
+      </div>
+    </main>
+  </body>
+</html>
+
+<style>
+  .notfound { padding-block: var(--s7); text-align: center; }
+  .kicker { font-family: var(--font-display); font-size: var(--fs-4xl); color: var(--accent); margin-bottom: 0; }
+  h1 { max-width: 20ch; margin-inline: auto; }
+  .lede { color: var(--text-muted); margin-inline: auto; }
+  .links { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s2); margin-top: var(--s4); }
+</style>

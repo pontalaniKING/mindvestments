@@ -1,0 +1,91 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import { navCategories } from '../data/site';
+import { t } from '../i18n/ui';
+import { urlFor } from '../i18n/content';
+
+const lifestylePillars = navCategories.find((c) => c.id === 'lifestyle')!.pillars;
+
+const articles = (
+  await getCollection('articles', ({ data }) => lifestylePillars.includes(data.pillar) && !data.draft)
+).sort((a, b) => a.data.order - b.data.order);
+
+// Group by pillar first (Sleep, then Fuel), and by cluster within each pillar,
+// so the hub reads as two clear sub-sections rather than one mixed grid.
+const groups = lifestylePillars
+  .map((pillar) => ({
+    pillar,
+    articles: articles.filter((a) => a.data.pillar === pillar)
+  }))
+  .filter((g) => g.articles.length > 0);
+---
+
+<Base title={t('category.lifestyle.label')} description={t('category.lifestyle.blurb')}>
+  <header class="wrap head" style="--marker: var(--pillar-sleep)">
+    <h1>{t('category.lifestyle.label')}</h1>
+    <p class="lede measure">{t('category.lifestyle.blurb')}</p>
+  </header>
+
+  <hr class="wrap rule" />
+
+  {
+    groups.map((group) => {
+      const clusters = [...new Set(group.articles.map((a) => a.data.cluster))];
+      return (
+        <section class="wrap section">
+          <p class="sub-kicker" style={`--marker: var(--pillar-${group.pillar})`}>
+            {t(`nav.pillar.${group.pillar}`)}
+          </p>
+          {clusters.map((cluster) => (
+            <div class="cluster-block">
+              <h2>{cluster}</h2>
+              <div class="grid">
+                {group.articles
+                  .filter((a) => a.data.cluster === cluster)
+                  .map((a) => (
+                    <ArticleCard
+                      href={urlFor(a)}
+                      title={a.data.title}
+                      description={a.data.description}
+                      pillar={a.data.pillar}
+                      cluster={a.data.cluster}
+                      minutes={a.data.minutes}
+                      evidence={a.data.evidence}
+                      hasVideo={!!a.data.video}
+                      videoDuration={a.data.video?.duration}
+                      image={a.data.image}
+                    />
+                  ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      );
+    })
+  }
+</Base>
+
+<style>
+  .head { padding-block: var(--s6) var(--s4); }
+  .head h1 { font-size: var(--fs-4xl); }
+  .head h1::after { content: ''; display: block; width: 3rem; height: 3px; background: var(--marker); margin-top: var(--s2); }
+  .head .lede { color: var(--text-muted); margin-top: var(--s3); }
+
+  .sub-kicker {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--marker);
+    border-top: 3px solid var(--marker);
+    padding-top: var(--s2);
+    margin-bottom: var(--s4);
+  }
+
+  .cluster-block + .cluster-block { margin-top: var(--s5); }
+  .grid { display: flex; flex-wrap: wrap; gap: var(--s4) var(--s3); }
+  .grid > :global(*) { flex: 1 1 260px; }
+</style>

@@ -1,0 +1,164 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import MindvestmentCard from '../../components/MindvestmentCard.astro';
+import VideoEmbed from '../../components/VideoEmbed.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import ArticleArt from '../../components/ArticleArt.astro';
+import { site } from '../../data/site';
+import { t } from '../../i18n/ui';
+import { parseId, urlFor } from '../../i18n/content';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('articles', ({ data }) => !data.draft);
+  return articles.map((entry) => {
+    const { pillar, slug } = parseId(entry.id);
+    return { params: { pillar, slug }, props: { entry } };
+  });
+}
+
+const { entry } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+
+const all = await getCollection('articles', ({ data }) => !data.draft);
+
+const related = (
+  d.related.length
+    ? d.related.map((id) => all.find((a) => parseId(a.id).pillar + '/' + parseId(a.id).slug === id)).filter(Boolean)
+    : all.filter((a) => a.data.pillar === d.pillar && a.id !== entry.id).slice(0, 3)
+) as typeof all;
+
+const fmt = (dt: Date) => dt.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: d.title,
+  description: d.description,
+  datePublished: d.published.toISOString(),
+  dateModified: (d.updated ?? d.published).toISOString(),
+  inLanguage: 'en',
+  author: { '@type': 'Person', name: d.author },
+  publisher: { '@type': 'Organization', name: site.name },
+  ...(d.video
+    ? { video: { '@type': 'VideoObject', name: d.video.title, embedUrl: `https://www.youtube.com/embed/${d.video.id}` } }
+    : {})
+};
+---
+
+<Base title={d.title} description={d.description} ogType="article">
+  <article class="wrap layout" style={`--marker: var(--pillar-${d.pillar})`}>
+    <aside class="rail">
+      <p class="crumb"><a href={`/${d.pillar}`}>{t(`nav.pillar.${d.pillar}`)}</a></p>
+      <p class="rail-line">{d.cluster}</p>
+      <p class="rail-line">{t('article.by')} {d.author}</p>
+      {d.reviewedBy && <p class="rail-line">{t('article.reviewedBy')} {d.reviewedBy}</p>}
+      <p class="rail-line">{t('article.checked')} {fmt(d.updated ?? d.published)}</p>
+    </aside>
+
+    <div class="body">
+      <h1>{d.title}</h1>
+      <p class="lede">{d.description}</p>
+
+      <div class="hero-art">
+        <ArticleArt pillar={d.pillar} image={d.image} seed={entry.id} ratio="16 / 9" />
+      </div>
+
+      {
+        d.careNote && (
+          <div class="callout callout-care">
+            <p><strong>{t('article.careNote')}</strong> {d.careNote}</p>
+          </div>
+        )
+      }
+
+      <div class="card-slot">
+        <MindvestmentCard
+          action={d.action}
+          minutes={d.minutes}
+          difficulty={d.difficulty}
+          payoff={d.payoff}
+          timeToEffect={d.timeToEffect}
+          evidence={d.evidence}
+          pillar={d.pillar}
+        />
+      </div>
+
+      {d.video && <VideoEmbed id={d.video.id} title={d.video.title} duration={d.video.duration} />}
+
+      <div class="prose">
+        <Content />
+      </div>
+
+      {
+        d.sources.length > 0 && (
+          <details class="sources">
+            <summary>{t('article.sources')} ({d.sources.length})</summary>
+            <ol>
+              {d.sources.map((s) => (
+                <li>
+                  {s.url ? <a href={s.url}>{s.text}</a> : <span>{s.text}</span>}
+                  {s.publisher && <span class="pub"> {s.publisher}</span>}
+                  {s.year && <span class="pub"> {s.year}</span>}
+                </li>
+              ))}
+            </ol>
+          </details>
+        )
+      }
+    </div>
+  </article>
+
+  {
+    related.length > 0 && (
+      <section class="wrap section">
+        <h2>{t('article.readNext')}</h2>
+        <div class="grid">
+          {related.map((a) => (
+            <ArticleCard
+              href={urlFor(a)}
+              title={a.data.title}
+              description={a.data.description}
+              pillar={a.data.pillar}
+              cluster={a.data.cluster}
+              minutes={a.data.minutes}
+              evidence={a.data.evidence}
+              hasVideo={!!a.data.video}
+              videoDuration={a.data.video?.duration}
+              image={a.data.image}
+            />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+</Base>
+
+<style>
+  .layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: var(--s5); padding-block: var(--s6) var(--s5); align-items: start; }
+  .rail { position: sticky; top: var(--s3); font-size: var(--fs-xs); color: var(--text-muted); border-top: 3px solid var(--marker); padding-top: var(--s2); }
+  .crumb { margin: 0 0 var(--s2); }
+  .crumb a { text-decoration: none; color: var(--text); font-size: var(--fs-sm); }
+  .crumb a:hover { color: var(--accent); }
+  .rail-line { margin: 0 0 0.35rem; }
+  .body h1 { font-size: var(--fs-4xl); max-width: 20ch; margin-bottom: var(--s3); }
+  .body > .lede { color: var(--text-muted); max-width: var(--measure); margin-bottom: var(--s4); }
+  .card-slot { max-width: 34rem; margin-bottom: var(--s5); }
+  .hero-art { max-width: var(--measure); margin-bottom: var(--s4); }
+  .sources { margin-top: var(--s5); border-top: 1px solid var(--border); padding-top: var(--s3); max-width: var(--measure); font-size: var(--fs-sm); }
+  .sources summary { cursor: pointer; color: var(--text-muted); }
+  .sources ol { padding-inline-start: 1.2em; margin-top: var(--s2); }
+  .sources li { margin-bottom: 0.5rem; }
+  .pub { color: var(--text-muted); }
+  .grid { display: flex; flex-wrap: wrap; gap: var(--s4) var(--s3); }
+  .grid > :global(*) { flex: 1 1 260px; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; gap: var(--s3); }
+    .rail { position: static; display: flex; flex-wrap: wrap; gap: var(--s2); }
+    .rail p { margin: 0; }
+  }
+</style>

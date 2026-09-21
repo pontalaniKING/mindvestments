@@ -1,0 +1,75 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { pillarIds, type PillarId } from '../../data/site';
+import { t } from '../../i18n/ui';
+import { urlFor } from '../../i18n/content';
+
+export function getStaticPaths() {
+  return pillarIds.map((pillar) => ({ params: { pillar } }));
+}
+
+const { pillar } = Astro.params as { pillar: PillarId };
+
+const articles = (
+  await getCollection('articles', ({ data }) => data.pillar === pillar && !data.draft)
+).sort((a, b) => a.data.order - b.data.order);
+
+const clusters = [...new Set(articles.map((a) => a.data.cluster))];
+---
+
+<Base title={t(`nav.pillar.${pillar}`)} description={t(`pillar.${pillar}.intro`)}>
+  <header class="wrap head" style={`--marker: var(--pillar-${pillar})`}>
+    <h1>{t(`nav.pillar.${pillar}`)}</h1>
+    <p class="lede measure">{t(`pillar.${pillar}.intro`)}</p>
+  </header>
+
+  <hr class="wrap rule" />
+
+  {
+    articles.length === 0 && (
+      <section class="wrap section">
+        <p class="measure empty">
+          {t('pillar.empty')} <a href="/sleep">{t('pillar.emptyLink')}</a>.
+        </p>
+      </section>
+    )
+  }
+
+  {
+    clusters.map((cluster) => (
+      <section class="wrap section">
+        <h2>{cluster}</h2>
+        <div class="grid">
+          {articles
+            .filter((a) => a.data.cluster === cluster)
+            .map((a) => (
+              <ArticleCard
+                href={urlFor(a)}
+                title={a.data.title}
+                description={a.data.description}
+                pillar={a.data.pillar}
+                cluster={a.data.cluster}
+                minutes={a.data.minutes}
+                evidence={a.data.evidence}
+                hasVideo={!!a.data.video}
+                videoDuration={a.data.video?.duration}
+                image={a.data.image}
+              />
+            ))}
+        </div>
+      </section>
+    ))
+  }
+</Base>
+
+<style>
+  .head { padding-block: var(--s6) var(--s4); }
+  .head h1 { font-size: var(--fs-4xl); }
+  .head h1::after { content: ''; display: block; width: 3rem; height: 3px; background: var(--marker); margin-top: var(--s2); }
+  .head .lede { color: var(--text-muted); margin-top: var(--s3); }
+  .grid { display: flex; flex-wrap: wrap; gap: var(--s4) var(--s3); }
+  .grid > :global(*) { flex: 1 1 260px; }
+  .empty { color: var(--text-muted); }
+</style>

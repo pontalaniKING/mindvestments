@@ -1,0 +1,237 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import MindvestmentCard from '../components/MindvestmentCard.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import { navCategories } from '../data/site';
+import { t } from '../i18n/ui';
+import { urlFor } from '../i18n/content';
+
+const all = (await getCollection('articles', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order
+);
+
+const hero = all.find((a) => a.data.featured) ?? all[0];
+const latest = all.filter((a) => a.id !== hero?.id).slice(0, 6);
+const withVideo = all.find((a) => a.data.video);
+
+const complaints = [
+  { key: 'complaint.tired', href: '/sleep' },
+  { key: 'complaint.cantSleep', href: '/sleep' },
+  { key: 'complaint.wired', href: hero ? urlFor(hero) : '/sleep' },
+  { key: 'complaint.stiff', href: '/move' },
+  { key: 'complaint.noTime', href: '/start' },
+  { key: 'complaint.dontKnow', href: '/start' }
+];
+---
+
+<Base title={t('home.h1')}>
+  <section class="wrap hero">
+    <div class="hero-copy">
+      <h1>{t('home.h1')}</h1>
+      <p class="lede">{t('home.lede')}</p>
+      <div class="cta">
+        <a class="btn" href="/start">{t('home.ctaStart')}</a>
+        <a class="btn btn-quiet" href="/sleep">{t('home.ctaSleep')}</a>
+      </div>
+      <p class="note">{t('home.note')}</p>
+    </div>
+
+    {
+      hero && (
+        <div class="hero-card">
+          <MindvestmentCard
+            action={hero.data.action}
+            minutes={hero.data.minutes}
+            difficulty={hero.data.difficulty}
+            payoff={hero.data.payoff}
+            timeToEffect={hero.data.timeToEffect}
+            evidence={hero.data.evidence}
+            pillar={hero.data.pillar}
+            href={urlFor(hero)}
+          />
+        </div>
+      )
+    }
+  </section>
+
+  <hr class="wrap rule" />
+
+  <section class="wrap section">
+    <h2>{t('home.complaintsHeading')}</h2>
+    <div class="complaints">
+      {complaints.map((c) => <a class="complaint" href={c.href}>{t(c.key)}</a>)}
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <h2>{t('home.pillarsHeading')}</h2>
+    <div class="pillars">
+      {
+        navCategories.map((cat) => (
+          <a class="pillar" href={cat.href} style={`--marker: var(--pillar-${cat.pillars[0]})`}>
+            <span class="pillar-name">{t(`category.${cat.id}.label`)}</span>
+            <span class="pillar-blurb">{t(`category.${cat.id}.blurb`)}</span>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <h2>{t('home.howHeading')}</h2>
+    <ol class="steps measure">
+      <li><h3>{t('home.step1Title')}</h3><p>{t('home.step1Body')}</p></li>
+      <li><h3>{t('home.step2Title')}</h3><p>{t('home.step2Body')}</p></li>
+      <li><h3>{t('home.step3Title')}</h3><p>{t('home.step3Body')}</p></li>
+    </ol>
+  </section>
+
+  {
+    withVideo && (
+      <section class="wrap section">
+        <h2>{t('home.watchHeading')}</h2>
+        <p class="measure">{t('home.watchBody')}</p>
+        <p><a href={urlFor(withVideo)}>{withVideo.data.video?.title}</a></p>
+      </section>
+    )
+  }
+
+  {
+    latest.length > 0 && (
+      <section class="wrap section">
+        <h2>{t('home.latestHeading')}</h2>
+        <div class="grid">
+          {latest.map((a) => (
+            <ArticleCard
+              href={urlFor(a)}
+              title={a.data.title}
+              description={a.data.description}
+              pillar={a.data.pillar}
+              cluster={a.data.cluster}
+              minutes={a.data.minutes}
+              evidence={a.data.evidence}
+              hasVideo={!!a.data.video}
+              videoDuration={a.data.video?.duration}
+              image={a.data.image}
+            />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <section class="wrap section">
+    <div class="trust">
+      <h2>{t('home.trustHeading')}</h2>
+      <p class="measure">{t('home.trustBody')}</p>
+      <p><a href="/evidence">{t('home.trustLink')}</a></p>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="news">
+      <h2>{t('home.newsHeading')}</h2>
+      <p>{t('home.newsBody')}</p>
+      <form class="signup" action="#" method="post">
+        <label class="sr" for="email">Email</label>
+        <input id="email" name="email" type="email" required placeholder={t('home.newsPlaceholder')} />
+        <button class="btn" type="submit">{t('home.newsButton')}</button>
+      </form>
+      <p class="note">{t('home.newsNote')}</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: var(--s6); align-items: start; padding-block: var(--s7) var(--s6); }
+  .hero h1 { font-size: var(--fs-4xl); max-width: 14ch; margin-bottom: var(--s3); }
+  .hero .lede { max-width: 46ch; color: var(--text-muted); }
+  .cta { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s4); }
+  .note { font-size: var(--fs-xs); color: var(--text-muted); margin-top: var(--s2); }
+
+  .complaints {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .complaint { background: var(--bg); padding: var(--s3); text-decoration: none; font-family: var(--font-display); font-size: var(--fs-lg); color: var(--text); transition: background 160ms ease-out; }
+  .complaint:hover { background: var(--surface); color: var(--accent); }
+
+  .pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--s3); }
+  .pillar { border-top: 3px solid var(--marker); padding-top: var(--s2); text-decoration: none; color: var(--text); display: block; }
+  .pillar-name { display: block; font-family: var(--font-display); font-size: var(--fs-lg); }
+  .pillar-blurb { display: block; font-size: var(--fs-sm); color: var(--text-muted); margin-top: 0.2rem; }
+  .pillar-soon { display: inline-block; margin-top: var(--s1); font-size: var(--fs-xs); color: var(--text-muted); border: 1px dashed var(--border-strong); border-radius: 100px; padding: 0.1rem 0.5rem; }
+  .pillar:hover .pillar-name { color: var(--accent); }
+
+  /*
+    Each <li> has three grid items once the ::before counter is counted:
+    the number, the <h3>, and the <p>. With only two explicit columns,
+    grid auto-placement put the number and heading on row 1 and then
+    wrapped the paragraph alone onto row 2 in the 2.5rem number column —
+    squeezing the description text into a ~40px column. Placing every
+    item explicitly fixes that: number spans both rows in column 1,
+    heading and description both sit in column 2.
+  */
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 2.5rem minmax(280px, 500px);
+    grid-template-rows: auto auto;
+    column-gap: var(--s3);
+    padding-block: var(--s3);
+    border-top: 1px solid var(--border);
+  }
+  .steps li::before {
+    content: counter(step);
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    font-family: var(--font-display);
+    font-size: var(--fs-lg);
+    color: var(--accent);
+  }
+  .steps h3 { grid-column: 2; grid-row: 1; margin-bottom: 0.2rem; font-size: var(--fs-lg); }
+  .steps p { grid-column: 2; grid-row: 2; margin: 0; color: var(--text-muted); font-size: var(--fs-sm); }
+
+  /*
+    CSS Grid with auto-fill: column tracks are shared across every row,
+    so a sparse last row (e.g. 6 cards at 4 per row leaves 2 in row two)
+    keeps those cards the same width as the row above instead of
+    stretching them to fill the leftover space. The empty trailing
+    tracks are simply blank rather than producing a dramatically wider
+    card — the trade-off this file's flexbox version used to avoid, but
+    an uneven card width is the worse of the two on wide screens.
+  */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--s4) var(--s3);
+  }
+
+  .trust, .news { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s5); }
+
+  .signup { display: flex; gap: var(--s1); flex-wrap: wrap; margin-top: var(--s3); max-width: 460px; }
+  .signup input { flex: 1 1 220px; font-family: var(--font-body); font-size: var(--fs-sm); padding: 0.8rem 1rem; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg); color: var(--text); }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; gap: var(--s4); padding-block: var(--s5) var(--s4); }
+    .hero h1 { max-width: none; }
+  }
+
+  @media (max-width: 520px) {
+    .steps li {
+      grid-template-columns: 2.5rem 1fr;
+      column-gap: var(--s2);
+    }
+    .steps h3,
+    .steps p { grid-column: 2; max-width: none; }
+  }
+</style>

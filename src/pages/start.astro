@@ -1,0 +1,223 @@
+---
+import Base from '../layouts/Base.astro';
+import { t } from '../i18n/ui';
+
+/**
+ * The quiz copy lives here rather than in ui.ts, since it is one
+ * self-contained interactive unit rather than scattered chrome strings.
+ */
+type Question = { text: string; options: { label: string; score: Record<string, number> }[] };
+type Outcome = { key: string; heading: string; reason: string; href: string; action: string };
+
+const copy: { questions: Question[]; outcomes: Outcome[] } = {
+  questions: [
+    {
+      text: 'How are you sleeping?',
+      options: [
+        { label: 'Badly, most nights', score: { light: 2, wind: 1 } },
+        { label: 'Fine some nights, not others', score: { light: 2 } },
+        { label: 'Hard to fall asleep', score: { caffeine: 2, wind: 1 } },
+        { label: 'Well enough', score: {} }
+      ]
+    },
+    {
+      text: 'What happens to your energy in the afternoon?',
+      options: [
+        { label: 'It falls off a cliff', score: { light: 2 } },
+        { label: 'It dips', score: { light: 1 } },
+        { label: 'It holds up', score: {} }
+      ]
+    },
+    {
+      text: 'Do you get up at roughly the same time every day?',
+      options: [
+        { label: 'No, it varies a lot', score: { light: 3 } },
+        { label: 'On weekdays only', score: { light: 1 } },
+        { label: 'Yes, almost always', score: {} }
+      ]
+    },
+    {
+      text: 'When do you have your last coffee, tea or energy drink?',
+      options: [
+        { label: 'After 4pm', score: { caffeine: 3 } },
+        { label: 'Early afternoon', score: { caffeine: 1 } },
+        { label: 'Morning only', score: {} },
+        { label: 'I do not drink any', score: {} }
+      ]
+    },
+    {
+      text: 'How does your head feel when you get into bed?',
+      options: [
+        { label: 'Still racing', score: { wind: 3 } },
+        { label: 'Busy but manageable', score: { wind: 1 } },
+        { label: 'Quiet', score: {} }
+      ]
+    },
+    {
+      text: 'Realistically, how much time do you have a day?',
+      options: [
+        { label: 'Five minutes', score: {} },
+        { label: 'Fifteen minutes', score: {} },
+        { label: 'Half an hour or more', score: {} }
+      ]
+    }
+  ],
+  outcomes: [
+    {
+      key: 'light',
+      heading: 'Start with the timing of your day.',
+      reason:
+        'Your sleep is uneven and your energy drops in the afternoon. That pattern usually points at a body clock that has nothing steady to lock on to, not at sleep quality itself.',
+      href: '/sleep/morning-light',
+      action: 'Get ten minutes of outdoor daylight within half an hour of waking'
+    },
+    {
+      key: 'caffeine',
+      heading: 'Move your caffeine cut-off.',
+      reason:
+        'You are drinking caffeine late and struggling to fall asleep. Half of a dose is still in you six hours later, so an afternoon coffee is very often still working at midnight.',
+      href: '/sleep/caffeine-and-sleep',
+      action: 'Take your last caffeine before 2pm for two weeks'
+    },
+    {
+      key: 'wind',
+      heading: 'Give your head a landing strip.',
+      reason:
+        'You get into bed with your mind still going. Falling asleep is not a decision, so the useful change is the twenty minutes before bed rather than the moment itself.',
+      href: '/sleep/yoga-before-bed',
+      action: 'Ten slow minutes on the floor before bed, no phone'
+    }
+  ]
+};
+---
+
+<Base title={t('start.title')} description={t('start.description')}>
+  <section class="wrap intro">
+    <h1>{t('start.h1')}</h1>
+    <p class="lede measure">{t('start.lede')}</p>
+  </section>
+
+  <section class="wrap quiz" id="quiz">
+    <div class="progress"><span id="bar" /></div>
+
+    {copy.questions.map((q, i) => (
+      <fieldset class="q" data-q={i} hidden={i !== 0}>
+        <legend>
+          <span class="count">{t('start.questionOf', { n: i + 1, total: copy.questions.length })}</span>
+          <span class="text">{q.text}</span>
+        </legend>
+        <div class="options">
+          {q.options.map((o) => (
+            <button type="button" class="option" data-score={JSON.stringify(o.score)}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+    ))}
+
+    {copy.outcomes.map((o) => (
+      <div class="result" data-outcome={o.key} hidden>
+        <h2>{o.heading}</h2>
+        <p class="measure">{o.reason}</p>
+        <div class="next">
+          <p class="next-label">{t('start.firstMindvestment')}</p>
+          <p class="next-action">{o.action}</p>
+          <a class="btn" href={o.href}>{t('start.readHow')}</a>
+        </div>
+        <p class="again">
+          <button type="button" class="link-btn" data-restart>{t('start.again')}</button>
+        </p>
+      </div>
+    ))}
+  </section>
+</Base>
+
+<script is:inline>
+  (function () {
+    const quiz = document.getElementById('quiz');
+    if (!quiz) return;
+
+    const steps = Array.from(quiz.querySelectorAll('.q'));
+    const results = Array.from(quiz.querySelectorAll('.result'));
+    const bar = document.getElementById('bar');
+    let current = 0;
+    let totals = {};
+
+    function paint() { bar.style.width = (current / steps.length) * 100 + '%'; }
+
+    function show(i) {
+      steps.forEach((s, n) => (s.hidden = n !== i));
+      paint();
+      steps[i]?.scrollIntoView({ block: 'nearest' });
+    }
+
+    function finish() {
+      steps.forEach((s) => (s.hidden = true));
+      bar.style.width = '100%';
+      const ranked = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+      const winner = ranked.length && ranked[0][1] > 0 ? ranked[0][0] : 'light';
+      results.forEach((r) => (r.hidden = r.dataset.outcome !== winner));
+    }
+
+    quiz.addEventListener('click', function (e) {
+      const opt = e.target.closest('.option');
+      if (opt) {
+        const score = JSON.parse(opt.dataset.score || '{}');
+        for (const k in score) totals[k] = (totals[k] || 0) + score[k];
+        current += 1;
+        current < steps.length ? show(current) : finish();
+        return;
+      }
+      if (e.target.closest('[data-restart]')) {
+        totals = {};
+        current = 0;
+        results.forEach((r) => (r.hidden = true));
+        show(0);
+      }
+    });
+
+    paint();
+  })();
+</script>
+
+<style>
+  .intro { padding-block: var(--s6) var(--s3); }
+  .intro h1 { font-size: var(--fs-4xl); }
+  .intro .lede { color: var(--text-muted); }
+
+  .quiz { padding-bottom: var(--s7); max-width: 720px; }
+
+  .progress { height: 2px; background: var(--border); margin-bottom: var(--s5); }
+  .progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 220ms ease-out; }
+
+  .q { border: 0; padding: 0; margin: 0; }
+  legend { display: block; margin-bottom: var(--s3); }
+  .count { display: block; font-size: var(--fs-xs); color: var(--text-muted); margin-bottom: var(--s1); }
+  .text { display: block; font-family: var(--font-display); font-size: var(--fs-2xl); line-height: 1.15; letter-spacing: -0.015em; }
+
+  .options { display: grid; gap: var(--s1); }
+  .option {
+    text-align: start;
+    font-family: var(--font-body);
+    font-size: var(--fs-base);
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--s2) var(--s3);
+    cursor: pointer;
+    transition: border-color 140ms ease-out, background 140ms ease-out;
+  }
+  .option:hover { border-color: var(--accent); background: var(--bg); }
+
+  .result h2 { font-size: var(--fs-3xl); max-width: 18ch; }
+  .result p { color: var(--text-muted); }
+
+  .next { margin-top: var(--s4); background: var(--surface); border: 1px solid var(--border); border-inline-start: 3px solid var(--accent); border-radius: var(--radius); padding: var(--s3); }
+  .next-label { font-size: var(--fs-xs); margin-bottom: var(--s1); }
+  .next-action { font-family: var(--font-display); font-size: var(--fs-xl); line-height: 1.2; color: var(--text); margin-bottom: var(--s3); max-width: 26ch; }
+
+  .link-btn { background: none; border: 0; padding: 0; font: inherit; color: var(--text-muted); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; cursor: pointer; }
+  .again { margin-top: var(--s4); font-size: var(--fs-sm); }
+</style>

@@ -1,0 +1,60 @@
+---
+import EvidenceBadge from './EvidenceBadge.astro';
+import ArticleArt from './ArticleArt.astro';
+import type { EvidenceGrade, PillarId } from '../data/site';
+
+interface Props {
+  href: string;
+  title: string;
+  description: string;
+  pillar: PillarId;
+  cluster: string;
+  minutes?: number;
+  evidence: EvidenceGrade;
+  hasVideo?: boolean;
+  videoDuration?: string;
+  image?: { src: string; alt: string };
+  seed?: string;
+}
+
+const {
+  href,
+  title,
+  description,
+  pillar,
+  cluster,
+  minutes,
+  evidence,
+  hasVideo,
+  videoDuration,
+  image,
+  seed
+} = Astro.props;
+---
+
+<article class="card" style={`--marker: var(--pillar-${pillar})`}>
+  <a class="thumb" href={href} tabindex="-1" aria-hidden="true">
+    <ArticleArt pillar={pillar} image={image} seed={seed ?? href} ratio="16 / 10" />
+  </a>
+  <p class="cluster">{cluster}</p>
+  <h3><a href={href}>{title}</a></h3>
+  <p class="desc">{description}</p>
+  <div class="meta">
+    <EvidenceBadge grade={evidence} showLabel={false} />
+    {minutes !== undefined && <span class="chip">{minutes} min</span>}
+    {hasVideo && <span class="chip video">▶ {videoDuration}</span>}
+  </div>
+</article>
+
+<style>
+  .card { display: flex; flex-direction: column; height: 100%; }
+  .thumb { display: block; margin-bottom: var(--s2); }
+  .cluster { font-size: var(--fs-xs); color: var(--text-muted); margin: 0 0 var(--s1); }
+  h3 { font-size: var(--fs-lg); line-height: 1.25; margin: 0 0 var(--s1); }
+  h3 a { text-decoration: none; }
+  h3 a:hover { color: var(--accent); }
+  .desc { font-size: var(--fs-sm); color: var(--text-muted); margin: 0 0 var(--s2); flex-grow: 1; }
+  .meta { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+  .chip { font-size: var(--fs-xs); color: var(--text-muted); border: 1px solid var(--border); border-radius: 100px; padding: 0.15rem 0.55rem; }
+  .video { border-color: var(--marker); color: var(--text); }
+</style>

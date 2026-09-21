@@ -1,0 +1,73 @@
+---
+import { navCategories, site } from '../data/site';
+import { t } from '../i18n/ui';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <hr class="rule" />
+  <div class="wrap cols">
+    <div>
+      <p class="name">{site.name}</p>
+      <p class="muted">{t('site.description')}</p>
+    </div>
+
+    <nav aria-label="Topics">
+      <p class="head">{t('footer.topics')}</p>
+      {navCategories.map((cat) => <a href={cat.href}>{cat.label}</a>)}
+    </nav>
+
+    <nav aria-label="This site">
+      <p class="head">{t('footer.thisSite')}</p>
+      <a href="/start">{t('nav.startHere')}</a>
+      <a href="/evidence">{t('footer.evidence')}</a>
+      <a href="/about">{t('footer.about')}</a>
+      <a href="/contact">{t('footer.contact')}</a>
+      <a href={site.youtube} target="_blank" rel="noopener noreferrer">{t('footer.youtube')}</a>
+    </nav>
+  </div>
+
+  <div class="wrap fine">
+    <p>© {year} {site.name}. {t('footer.copyright')}</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer { margin-top: var(--s7); padding-bottom: var(--s5); }
+
+  .cols {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: var(--s4);
+    padding-top: var(--s5);
+  }
+
+  .name { font-family: var(--font-display); font-size: var(--fs-lg); margin-bottom: var(--s1); }
+  .muted { color: var(--text-muted); font-size: var(--fs-sm); max-width: 42ch; }
+  .head {
+    font-size: var(--fs-xs);
+    font-family: var(--font-ui);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: var(--s2);
+  }
+
+  nav a {
+    display: block;
+    font-size: var(--fs-sm);
+    text-decoration: none;
+    color: var(--text);
+    padding-block: 0.25rem;
+  }
+
+  nav a:hover { color: var(--accent); }
+
+  .fine { margin-top: var(--s5); font-size: var(--fs-xs); color: var(--text-muted); }
+
+  @media (max-width: 680px) {
+    .cols { grid-template-columns: 1fr; }
+  }
+</style>
