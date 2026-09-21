@@ -22,7 +22,7 @@
   --bg: var(--ivory);
   --surface: #ffffff;
   --text: var(--charcoal);
-  --text-muted: rgba(44, 44, 44, 0.64);
+  --text-muted: rgba(44, 44, 44, 0.70);
   --accent: var(--forest);
   --accent-hover: var(--forest-deep);
   --gold-accent: var(--gold);
