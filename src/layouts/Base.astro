@@ -23,6 +23,32 @@ const { title, description, ogType = 'website', image } = Astro.props;
 const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — ${t('site.tagline')}`;
 const pageDescription = description ?? t('site.description');
 const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).href;
+
+// Sitewide Organization + WebSite structured data, present on every page.
+// Both nodes carry a stable @id so other JSON-LD on the site (e.g. the
+// Article schema's `publisher`) can reference them instead of repeating
+// the same facts. Only facts already defined in src/data/site.ts are used
+// here — no invented social profiles, addresses or logo.
+const organizationId = `${site.url}/#organization`;
+const websiteId = `${site.url}/#website`;
+const siteJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': organizationId,
+      name: site.name,
+      url: site.url
+    },
+    {
+      '@type': 'WebSite',
+      '@id': websiteId,
+      name: site.name,
+      url: site.url,
+      publisher: { '@id': organizationId }
+    }
+  ]
+};
 ---
 
 <!doctype html>
@@ -45,6 +71,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).href;
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(siteJsonLd)} is:inline />
 
     <meta name="theme-color" content="#224634" />
 

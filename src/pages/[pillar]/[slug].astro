@@ -47,7 +47,10 @@ const jsonLd = {
   dateModified: (d.updated ?? d.published).toISOString(),
   inLanguage: 'en',
   author: { '@type': 'Person', name: d.author },
-  publisher: { '@type': 'Organization', name: site.name },
+  // References the sitewide Organization node defined once in Base.astro
+  // (by @id) instead of repeating the same Organization object on every
+  // article page.
+  publisher: { '@id': `${site.url}/#organization` },
   ...(imageUrl ? { image: imageUrl } : {}),
   ...(d.video
     ? { video: { '@type': 'VideoObject', name: d.video.title, embedUrl: `https://www.youtube.com/embed/${d.video.id}` } }
