@@ -69,7 +69,12 @@ const clusters = [...new Set(articles.map((a) => a.data.cluster))];
   .head h1 { font-size: var(--fs-4xl); }
   .head h1::after { content: ''; display: block; width: 3rem; height: 3px; background: var(--marker); margin-top: var(--s2); }
   .head .lede { color: var(--text-muted); margin-top: var(--s3); }
-  .grid { display: flex; flex-wrap: wrap; gap: var(--s4) var(--s3); }
-  .grid > :global(*) { flex: 1 1 260px; }
+  /*
+    Grid with auto-fit instead of flex-wrap: a short row (few articles in
+    a cluster) still stretches evenly to fill the width like before, but
+    an uneven last row of a longer list keeps its cards the same width
+    as the row above rather than stretching them dramatically wider.
+  */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s4) var(--s3); }
   .empty { color: var(--text-muted); }
 </style>

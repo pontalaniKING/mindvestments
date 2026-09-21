@@ -93,9 +93,7 @@ export const ui: Dict = {
     'home.trustLink': 'How the grading works',
     'home.newsHeading': 'One mindvestment a week',
     'home.newsBody': 'Two minutes to read. One thing to try. Nothing else.',
-    'home.newsPlaceholder': 'you@example.com',
-    'home.newsButton': 'Subscribe',
-    'home.newsNote': 'Replace the form action with your email provider before launch.',
+    'home.newsNote': 'Sign-up isn’t open yet — check back soon.',
 
     'complaint.tired': 'Always tired',
     'complaint.cantSleep': 'Can’t fall asleep',
@@ -184,7 +182,6 @@ export const ui: Dict = {
     'footer.evidence': 'How we grade evidence',
     'footer.about': 'About',
     'footer.contact': 'Contact',
-    'footer.youtube': 'YouTube',
     'footer.copyright': 'General information, not medical advice. Talk to a clinician about anything that concerns you.',
 
     'notFound.kicker': '404',

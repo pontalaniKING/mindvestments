@@ -9,9 +9,16 @@ interface Props {
   title?: string;
   description?: string;
   ogType?: string;
+  /**
+   * Absolute URL of a real photo for this page (article hero image, once
+   * one exists in frontmatter). Left undefined everywhere today since no
+   * article has a real photo yet — omitting it entirely is intentional:
+   * no og:image/twitter:image tags render until a real image is passed in.
+   */
+  image?: string;
 }
 
-const { title, description, ogType = 'website' } = Astro.props;
+const { title, description, ogType = 'website', image } = Astro.props;
 
 const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — ${t('site.tagline')}`;
 const pageDescription = description ?? t('site.description');
@@ -32,7 +39,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).href;
     <meta property="og:type" content={ogType} />
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content="en" />
-    <meta name="twitter:card" content="summary_large_image" />
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+    {image && <meta name="twitter:image" content={image} />}
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />

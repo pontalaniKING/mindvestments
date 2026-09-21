@@ -31,6 +31,13 @@ const related = (
 
 const fmt = (dt: Date) => dt.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
 
+// Once an article has a real photo (`image: { src, alt }` in frontmatter),
+// this one absolute URL automatically becomes the og:image, twitter:image
+// and JSON-LD image below — no separate config to keep in sync. Today no
+// article sets `image`, so `imageUrl` is undefined and none of the three
+// render, exactly as before.
+const imageUrl = d.image ? new URL(d.image.src, Astro.site ?? site.url).href : undefined;
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Article',
@@ -41,13 +48,14 @@ const jsonLd = {
   inLanguage: 'en',
   author: { '@type': 'Person', name: d.author },
   publisher: { '@type': 'Organization', name: site.name },
+  ...(imageUrl ? { image: imageUrl } : {}),
   ...(d.video
     ? { video: { '@type': 'VideoObject', name: d.video.title, embedUrl: `https://www.youtube.com/embed/${d.video.id}` } }
     : {})
 };
 ---
 
-<Base title={d.title} description={d.description} ogType="article">
+<Base title={d.title} description={d.description} ogType="article" image={imageUrl}>
   <article class="wrap layout" style={`--marker: var(--pillar-${d.pillar})`}>
     <aside class="rail">
       <p class="crumb"><a href={`/${d.pillar}`}>{t(`nav.pillar.${d.pillar}`)}</a></p>
@@ -153,8 +161,7 @@ const jsonLd = {
   .sources ol { padding-inline-start: 1.2em; margin-top: var(--s2); }
   .sources li { margin-bottom: 0.5rem; }
   .pub { color: var(--text-muted); }
-  .grid { display: flex; flex-wrap: wrap; gap: var(--s4) var(--s3); }
-  .grid > :global(*) { flex: 1 1 260px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s4) var(--s3); }
 
   @media (max-width: 900px) {
     .layout { grid-template-columns: 1fr; gap: var(--s3); }
