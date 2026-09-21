@@ -34,7 +34,19 @@ const index = articles.map((a) => ({
     <ul id="results" class="results"></ul>
   </div>
 
-  <script type="application/json" id="search-index" set:html={JSON.stringify(index)} />
+  {
+    /*
+      Escaping "<" as < prevents a literal "</script" sequence inside
+      any indexed title/description from prematurely closing this tag.
+      JSON.parse below decodes < back to "<" automatically, so the
+      parsed data and search behavior are unchanged.
+    */
+  }
+  <script
+    type="application/json"
+    id="search-index"
+    set:html={JSON.stringify(index).replace(/</g, '\\u003c')}
+  />
 
   <script>
     const data = JSON.parse(document.getElementById('search-index')!.textContent || '[]') as {
