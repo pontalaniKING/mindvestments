@@ -52,14 +52,6 @@ const copy: { questions: Question[]; outcomes: Outcome[] } = {
         { label: 'Busy but manageable', score: { wind: 1 } },
         { label: 'Quiet', score: {} }
       ]
-    },
-    {
-      text: 'Realistically, how much time do you have a day?',
-      options: [
-        { label: 'Five minutes', score: {} },
-        { label: 'Fifteen minutes', score: {} },
-        { label: 'Half an hour or more', score: {} }
-      ]
     }
   ],
   outcomes: [
@@ -89,6 +81,26 @@ const copy: { questions: Question[]; outcomes: Outcome[] } = {
     }
   ]
 };
+
+/**
+ * Highest score each outcome key can reach (best-worst answer in every
+ * question). Raw totals favour keys that appear in more questions — light
+ * is scored in three questions, caffeine and wind in two each — so finish()
+ * compares each total against its own maximum instead of comparing raw
+ * sums. Computed from copy.questions so the two can never drift apart.
+ */
+const maxima: Record<string, number> = {};
+for (const q of copy.questions) {
+  const perQuestion: Record<string, number> = {};
+  for (const o of q.options) {
+    for (const [k, v] of Object.entries(o.score)) {
+      perQuestion[k] = Math.max(perQuestion[k] ?? 0, v);
+    }
+  }
+  for (const [k, v] of Object.entries(perQuestion)) {
+    maxima[k] = (maxima[k] ?? 0) + v;
+  }
+}
 ---
 
 <Base title={t('start.title')} description={t('start.description')}>
@@ -97,7 +109,7 @@ const copy: { questions: Question[]; outcomes: Outcome[] } = {
     <p class="lede measure">{t('start.lede')}</p>
   </section>
 
-  <section class="wrap quiz" id="quiz">
+  <section class="wrap quiz" id="quiz" data-maxima={JSON.stringify(maxima)}>
     <div class="progress"><span id="bar" /></div>
 
     {copy.questions.map((q, i) => (
@@ -141,6 +153,7 @@ const copy: { questions: Question[]; outcomes: Outcome[] } = {
     const steps = Array.from(quiz.querySelectorAll('.q'));
     const results = Array.from(quiz.querySelectorAll('.result'));
     const bar = document.getElementById('bar');
+    const maxima = JSON.parse(quiz.dataset.maxima || '{}');
     let current = 0;
     let totals = {};
 
@@ -155,7 +168,11 @@ const copy: { questions: Question[]; outcomes: Outcome[] } = {
     function finish() {
       steps.forEach((s) => (s.hidden = true));
       bar.style.width = '100%';
-      const ranked = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+      // Compare relative severity (share of each outcome's max), not raw
+      // sums, so outcomes scored in fewer questions can still win.
+      const ranked = Object.entries(totals)
+        .map(([k, v]) => [k, v / (maxima[k] || 1)])
+        .sort((a, b) => b[1] - a[1]);
       const winner = ranked.length && ranked[0][1] > 0 ? ranked[0][0] : 'light';
       results.forEach((r) => (r.hidden = r.dataset.outcome !== winner));
     }

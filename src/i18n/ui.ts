@@ -117,7 +117,7 @@ export const ui: Dict = {
     'start.description': 'Six questions, about a minute, no account. It points at one thing to change, not ten.',
     'start.h1': 'Where should you start?',
     'start.lede':
-      'Six questions, about a minute. It points at one thing, and it will only ever point at something the evidence actually supports.',
+      'Five questions, about a minute. It points at one thing, and it will only ever point at something the evidence actually supports.',
     'start.questionOf': 'Question {n} of {total}',
     'start.firstMindvestment': 'Your first mindvestment',
     'start.readHow': 'Read how to do it',
