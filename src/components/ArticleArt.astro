@@ -37,7 +37,7 @@ const rot = n % 360;
 <div class="art" style={`--marker: var(--pillar-${pillar}); aspect-ratio: ${ratio};`}>
   {
     image ? (
-      <img src={image.src} alt={image.alt} loading="lazy" />
+      <img src={image.src} alt={image.alt} loading="eager" />
     ) : (
       <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <g transform={`rotate(${rot} ${cx} ${cy})`} fill="none" stroke="var(--marker)">
